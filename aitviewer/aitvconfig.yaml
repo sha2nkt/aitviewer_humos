@@ -8,7 +8,7 @@ datasets:
   amass:
     "../datasets/amass_data"
   tmr:
-    "../datasets/guoh3dfeats"
+    "../datasets/humos3dfeats"
 
 # Pytorch configuration.
 device: "cuda:0"
