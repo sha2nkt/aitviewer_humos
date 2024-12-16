@@ -1,4 +1,5 @@
 # Copyright (C) 2023  ETH Zurich, Manuel Kaufmann, Velko Vechev, Dario Mylonopoulos
+import contextlib
 import os
 import pickle as pkl
 from typing import IO, Union
@@ -7,6 +8,8 @@ import numpy as np
 import torch
 from scipy.spatial.transform import Rotation
 from smplx.joint_names import JOINT_NAMES, SMPLH_JOINT_NAMES
+from humos.utils.rotation_conversions import rotation_6d_to_matrix, matrix_to_axis_angle
+
 
 from aitviewer.configuration import CONFIG as C
 from aitviewer.models.smpl import SMPLLayer
@@ -159,7 +162,7 @@ class SMPLSequence(Node):
         if self.smpl_layer.model_type != "flame":
             if self.smpl_layer.model_type != "mano":
                 global_oris = local_to_global(
-                    torch.cat([self.poses_root, self.poses_body, self.poses_left_hand, self.poses_right_hand], dim=-1),
+                    torch.cat([self.poses_root, self.poses_body], dim=-1),
                     self.skeleton[:, 0],
                     output_format="rotmat",
                 )
@@ -210,7 +213,9 @@ class SMPLSequence(Node):
 
         body_data = np.load(npz_data_path)
         if smpl_layer is None:
-            smpl_layer = SMPLLayer(model_type="smplh", gender=body_data["gender"].item(), device=C.device)
+            # Remove annoying shape warning from SMPL
+            with contextlib.redirect_stdout(None):
+                smpl_layer = SMPLLayer(model_type="smplh", gender=body_data["gender"].item(), device=C.device)
 
         if log:
             print("Data keys available: {}".format(list(body_data.keys())))
@@ -262,12 +267,14 @@ class SMPLSequence(Node):
         seqs = []
         for i in range(num_people):
             gender = body_data["genders"][i]
-            smpl_layer = SMPLLayer(
-                model_type="smpl",
-                gender="female" if gender == "f" else "male",
-                device=C.device,
-                num_betas=10,
-            )
+            # Remove annoying shape warning from SMPL
+            with contextlib.redirect_stdout(None):
+                smpl_layer = SMPLLayer(
+                    model_type="smpl",
+                    gender="female" if gender == "f" else "male",
+                    device=C.device,
+                    num_betas=10,
+                )
 
             # Extract the 30 Hz data that is already aligned with the image data.
             poses = body_data["poses"][i]
@@ -306,7 +313,9 @@ class SMPLSequence(Node):
         """Creates a SMPL sequence whose single frame is a SMPL mesh in T-Pose."""
 
         if smpl_layer is None:
-            smpl_layer = SMPLLayer(model_type="smplh", gender="neutral")
+            # Remove annoying shape warning from SMPL
+            with contextlib.redirect_stdout(None):
+                smpl_layer = SMPLLayer(model_type="smplh", gender="neutral")
 
         poses = np.zeros([frames, smpl_layer.bm.NUM_BODY_JOINTS * 3])  # including hands and global root
         return cls(poses, smpl_layer, betas=betas, **kwargs)
@@ -315,7 +324,9 @@ class SMPLSequence(Node):
     def from_npz(cls, file: Union[IO, str], smpl_layer: SMPLLayer = None, **kwargs):
         """Creates a SMPL sequence from a .npz file exported through the 'export' function."""
         if smpl_layer is None:
-            smpl_layer = SMPLLayer(model_type="smplh", gender="neutral")
+            # Remove annoying shape warning from SMPL
+            with contextlib.redirect_stdout(None):
+                smpl_layer = SMPLLayer(model_type="smplh", gender="neutral")
 
         data = np.load(file)
 

@@ -9,7 +9,6 @@ INSTALL_PYQT6 = os.getenv("AITVIEWER_INSTALL_PYQT6", 0)
 
 requirements = [
     "opencv-contrib-python-headless>=4.5.1.48",
-    "smplx",
     "moderngl-window>=2.4.3",
     "moderngl>=5.8.2,<6",
     "imgui==2.0.0",
